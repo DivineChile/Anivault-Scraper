@@ -24,8 +24,23 @@ function proxiedHlsUrl(req: Request, url: string, ref?: string): string {
   return `${publicBase(req)}/api/proxy/hls?url=${encodeURIComponent(url)}${refParam}`;
 }
 
-function proxiedVideoUrl(req: Request, url: string): string {
-  return `${publicBase(req)}/api/proxy/video?url=${encodeURIComponent(url)}`;
+function proxiedVideoUrl(req: Request, url: string, download?: boolean, filename?: string): string {
+  const downloadParam = download ? '&download=1' : '';
+  const filenameParam = filename ? `&filename=${encodeURIComponent(filename)}` : '';
+  return `${publicBase(req)}/api/proxy/video?url=${encodeURIComponent(url)}${downloadParam}${filenameParam}`;
+}
+
+// Builds a fansub-style download filename, e.g. "Cinemi_Black_Torch_-_02_1080p_Subbed".
+// AnimeHeaven serves a single MP4 per episode with no quality metadata on the
+// page, so quality is fixed at 1080p; its servers are sub-only (see
+// getHeavenServers), so "Subbed" is always accurate for that source.
+function buildDownloadFilename(title: string | null | undefined, epNum: number, quality = '1080p', subbed = true): string {
+  const cleanTitle = (title || 'Unknown')
+    .trim()
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  const epPadded = String(epNum).padStart(2, '0');
+  return `Cinemi_${cleanTitle}_-_${epPadded}_${quality}_${subbed ? 'Subbed' : 'Dubbed'}`;
 }
 
 function proxiedSubtitleUrl(req: Request, url: string, ref?: string): string {
@@ -270,6 +285,11 @@ async function watchHandler(req: Request, res: Response) {
         playbackMode: 'mp4',
         iframeOnly: false,
         subtitles: [],
+        downloadUrl: embedResult.downloadUrl,
+        downloadFilename: embedResult.downloadUrl ? buildDownloadFilename(siteIds.title, epNum) : null,
+        downloadProxyUrl: embedResult.downloadUrl
+          ? proxiedVideoUrl(req, embedResult.downloadUrl, true, `${buildDownloadFilename(siteIds.title, epNum)}.mp4`)
+          : null,
         note: 'AnimeHeaven currently exposes direct MP4 sources, not m3u8/HLS.',
       });
     }
@@ -505,6 +525,13 @@ router.get('/proxy/video', async (req: Request, res: Response) => {
     const cacheControl = upstream.headers['cache-control'];
     res.setHeader('Accept-Ranges', typeof acceptRanges === 'string' ? acceptRanges : 'bytes');
     res.setHeader('Cache-Control', typeof cacheControl === 'string' ? cacheControl : 'public, max-age=3600');
+    if (req.query.download) {
+      const rawName = typeof req.query.filename === 'string' ? req.query.filename : 'episode.mp4';
+      // Strip anything but safe filename chars — this header is otherwise
+      // attacker-controlled (comes straight from a query param).
+      const safeName = rawName.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(0, 200) || 'episode.mp4';
+      res.setHeader('Content-Disposition', `attachment; filename="${safeName}"`);
+    }
 
     for (const header of ['content-type', 'content-length', 'content-range', 'etag', 'last-modified']) {
       const value = upstream.headers[header];

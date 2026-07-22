@@ -34,6 +34,7 @@ export interface HeavenStream {
   m3u8: null;
   type: 'mp4';
   servers: string[];
+  downloadUrl: string | null;
 }
 
 function absoluteUrl(url: string): string {
@@ -165,6 +166,14 @@ export async function getHeavenStream(episodeId: string): Promise<HeavenStream |
   const primary = sources.find((url) => url.includes('/video.mp4')) || sources[0];
   if (!primary) return null;
 
+  // The watch page also renders a "Download Episode N" link (`div.linetitle2 a`)
+  // pointing at the same CDN host but with a `&d` flag that triggers
+  // Content-Disposition: attachment server-side, instead of the `<video><source>`
+  // tags used for inline playback. It's plain markup (the onclick="dwn()" handler
+  // on the wrapped div is just a UI hook), so no JS execution is needed to read it.
+  const downloadHref = $('div.linetitle2 a[href*="/video.mp4"]').first().attr('href')?.trim() || '';
+  const downloadUrl = /^https?:\/\//i.test(downloadHref) ? downloadHref : null;
+
   const stream: HeavenStream = {
     embedUrl: `${BASE}/gate.php`,
     streamUrl: primary,
@@ -172,6 +181,7 @@ export async function getHeavenStream(episodeId: string): Promise<HeavenStream |
     m3u8: null,
     type: 'mp4',
     servers: Array.from(new Set(sources)),
+    downloadUrl,
   };
   cacheSet(cacheKey, stream, 'stream');
   return stream;

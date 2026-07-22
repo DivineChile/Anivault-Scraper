@@ -86,6 +86,8 @@ GET /api/watch?source=animeheaven&heavenId={heavenId}&ep=3&type=sub
 
 > If `m3u8` is null, check `mp4` / `streamUrl` first. Some sources, including AnimeHeaven, expose direct MP4 instead of HLS.
 
+> AnimeHeaven responses also include `downloadUrl` (the raw CDN link scraped from the episode's "Download Episode N" button), `downloadFilename` (a formatted name like `Cinemi_Black_Torch_-_02_1080p_Subbed`), and `downloadProxyUrl` (the same link routed through `/api/proxy/video` with the correct Referer/Origin, `Content-Disposition: attachment`, and that filename, so it downloads instead of playing inline). All three are `null` if AnimeHeaven doesn't expose a download link for that episode. Quality is currently fixed at `1080p` and audio at `Subbed`, since AnimeHeaven's page exposes neither a quality selector nor a dub option.
+
 ### `GET /api/health`
 Server health, uptime, and cache stats.
 

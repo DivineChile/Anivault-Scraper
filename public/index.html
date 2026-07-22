@@ -1052,6 +1052,8 @@ async function doFetch() {
         ${data.mp4ProxyUrl ? `<div class="stream-card" style="grid-column:1/-1"><div class="stream-card-label">Playable MP4 Proxy</div><div class="stream-card-val"><a href="${data.mp4ProxyUrl}" target="_blank">${data.mp4ProxyUrl}</a></div></div>` : ''}
         ${data.rawStreamUrl ? `<div class="stream-card" style="grid-column:1/-1"><div class="stream-card-label">Raw MP4</div><div class="stream-card-val"><a href="${data.rawStreamUrl}" target="_blank">${data.rawStreamUrl}</a></div></div>` : ''}
         ${data.hlsProxyUrl ? `<div class="stream-card" style="grid-column:1/-1"><div class="stream-card-label">Playable HLS Proxy</div><div class="stream-card-val"><a href="${data.hlsProxyUrl}" target="_blank">${data.hlsProxyUrl}</a></div></div>` : ''}
+        ${data.downloadProxyUrl ? `<div class="stream-card" style="grid-column:1/-1"><div class="stream-card-label">Download Episode${data.downloadFilename ? ` (${data.downloadFilename})` : ''}</div><div class="stream-card-val"><a href="${data.downloadProxyUrl}" target="_blank">${data.downloadProxyUrl}</a></div></div>` : ''}
+        ${data.downloadUrl ? `<div class="stream-card" style="grid-column:1/-1"><div class="stream-card-label">Raw Download URL</div><div class="stream-card-val"><a href="${data.downloadUrl}" target="_blank">${data.downloadUrl}</a></div></div>` : ''}
         <div class="stream-card">
           <div class="stream-card-label">Playback Mode</div>
           <div class="stream-card-val">${data.playbackMode || '<span class="null-val">unknown</span>'}</div>
